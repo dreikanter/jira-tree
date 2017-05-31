@@ -9,7 +9,7 @@ require 'uri'
 
 Dotenv.load
 
-logger = Logger.new($stdout)
+LOGGER = Logger.new($stdout)
 
 REQUIRED_ENV_VARS = %w(
   JIRA_USERNAME
@@ -24,14 +24,84 @@ unless undefined_vars.empty?
 end
 
 class JiraBrowser
-  JIRA_ISSUE_TYPE = 'Epic'
-  JIRA_EPIC_TAGS = %w(trello)
-  JIRA_EPIC_NAME_FIELD = 'customfield_10005'
+  attr_reader :site
+  attr_reader :project_key
+  attr_reader :client
+
+  DEFAULT_CLIENT_OPTIONS = {
+    context_path: '',
+    auth_type: :basic
+  }
 
   def initialize(options = {})
-    @client = JIRA::Client.new({context_path: '',
-      auth_type: :basic}.merge(options))
+    @site = options[:site]
     @project_key = options[:project_key]
+    @client = JIRA::Client.new(DEFAULT_CLIENT_OPTIONS.merge(options))
+  end
+
+  def data
+    epics = load_epics
+    tasks = load_tasks(epics.keys)
+
+    tasks.each do |task|
+      epics[task[:epic_key]][:subtasks] << task
+    end
+
+    epics
+  end
+
+  private
+
+  def load_epics
+    client.Issue.jql([
+      'issuetype = Epic',
+      'status in ("In Progress", "To Do")',
+      "project = '#{project_key}'"
+    ].join(' AND ')).map { |issue| [issue.key, issue_hash(issue)] }.to_h
+  end
+
+  def load_tasks(epic_keys)
+    query = "'Epic Link' in (#{csv(epic_keys)})"
+    LOGGER.debug("JQL: #{query}")
+    client.Issue.jql(query).map { |issue| task_hash(issue) }
+  end
+
+  def issue_hash(issue)
+    {
+      key: issue.key,
+      summary: issue.summary,
+      url: issue_url(issue.key),
+      status: issue.fields['status']['name'],
+      type: issue.fields['issuetype']['name'],
+      created: issue.created,
+      updated: issue.updated,
+      subtasks: []
+    }
+  end
+
+  def task_hash(issue)
+    issue_hash(issue).merge(
+      epic_key: issue.customfield_10003,
+      subtasks: issue.subtasks.map { |subtask| subtask_hash(subtask) }
+    )
+  end
+
+  def subtask_hash(issue)
+    {
+      key: issue['key'],
+      summary: issue['fields']['summary'],
+      url: issue_url(issue['key']),
+      type: issue['fields']['issuetype']['name'],
+      status: issue['fields']['status']['name']
+    }
+  end
+
+  def issue_url(key)
+    URI.join(site, '/browse/', key).to_s
+  end
+
+  def csv(values)
+    values.join(',')
   end
 end
 
@@ -41,3 +111,5 @@ browser = JiraBrowser.new(
   site: ENV['JIRA_SITE'],
   project_key: ENV['JIRA_PROJECT_KEY']
 )
+
+puts JSON.pretty_generate browser.data
