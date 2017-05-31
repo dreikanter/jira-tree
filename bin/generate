@@ -6,6 +6,7 @@ require 'logger'
 require 'pry'
 require 'awesome_print'
 require 'uri'
+require 'mustache'
 
 Dotenv.load
 
@@ -17,6 +18,11 @@ REQUIRED_ENV_VARS = %w(
   JIRA_SITE
   JIRA_PROJECT_KEY
 ).freeze
+
+OUTPUT_FILE = ENV['OUTPUT_FILE'] || 'report.html'
+TEMPLATE_FILE = ENV['TEMPLATE_FILE'] || 'template.html'
+TEMPLATE_FULL_PATH =
+  File.expand_path(File.join('../..', TEMPLATE_FILE), __FILE__)
 
 undefined_vars = REQUIRED_ENV_VARS.reject { |v| ENV.key? v }
 unless undefined_vars.empty?
@@ -47,17 +53,19 @@ class JiraBrowser
       epics[task[:epic_key]][:subtasks] << task
     end
 
-    epics
+    epics.values
   end
 
   private
 
   def load_epics
-    client.Issue.jql([
+    query = [
       'issuetype = Epic',
       'status in ("In Progress", "To Do")',
       "project = '#{project_key}'"
-    ].join(' AND ')).map { |issue| [issue.key, issue_hash(issue)] }.to_h
+    ].join(' AND ')
+    LOGGER.debug("JQL: #{query}")
+    client.Issue.jql(query).map { |issue| [issue.key, issue_hash(issue)] }.to_h
   end
 
   def load_tasks(epic_keys)
@@ -112,4 +120,12 @@ browser = JiraBrowser.new(
   project_key: ENV['JIRA_PROJECT_KEY']
 )
 
-puts JSON.pretty_generate browser.data
+# puts JSON.pretty_generate browser.data
+
+issues = browser.data
+
+File.open(OUTPUT_FILE, 'w') do |f|
+  LOGGER.info("Template: #{TEMPLATE_FULL_PATH}")
+  LOGGER.info("Writing to '#{OUTPUT_FILE}'")
+  f.write(Mustache.render(File.read(TEMPLATE_FULL_PATH), issues: issues))
+end
