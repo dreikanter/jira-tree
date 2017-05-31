@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+require 'jira-ruby'
+require 'dotenv'
+require 'logger'
+require 'pry'
+require 'awesome_print'
+require 'uri'
+
+Dotenv.load
+
+logger = Logger.new($stdout)
+
+REQUIRED_ENV_VARS = %w(
+  JIRA_USERNAME
+  JIRA_PASSWORD
+  JIRA_SITE
+  JIRA_PROJECT_KEY
+).freeze
+
+undefined_vars = REQUIRED_ENV_VARS.reject { |v| ENV.key? v }
+unless undefined_vars.empty?
+  abort "Undefined environment variables: #{undefined_vars.join(', ')}"
+end
+
+class JiraBrowser
+  JIRA_ISSUE_TYPE = 'Epic'
+  JIRA_EPIC_TAGS = %w(trello)
+  JIRA_EPIC_NAME_FIELD = 'customfield_10005'
+
+  def initialize(options = {})
+    @client = JIRA::Client.new({context_path: '',
+      auth_type: :basic}.merge(options))
+    @project_key = options[:project_key]
+  end
+end
+
+browser = JiraBrowser.new(
+  username: ENV['JIRA_USERNAME'],
+  password: ENV['JIRA_PASSWORD'],
+  site: ENV['JIRA_SITE'],
+  project_key: ENV['JIRA_PROJECT_KEY']
+)
