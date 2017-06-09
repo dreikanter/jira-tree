@@ -6,7 +6,6 @@ require 'logger'
 require 'pry'
 require 'awesome_print'
 require 'uri'
-require 'mustache'
 
 Dotenv.load
 
@@ -19,10 +18,11 @@ REQUIRED_ENV_VARS = %w(
   JIRA_PROJECT_KEY
 ).freeze
 
-OUTPUT_FILE = ENV['OUTPUT_FILE'] || 'report.html'
-TEMPLATE_FILE = ENV['TEMPLATE_FILE'] || 'template.html'
-TEMPLATE_FULL_PATH =
-  File.expand_path(File.join('../..', TEMPLATE_FILE), __FILE__)
+expand_path = -> (path) { File.expand_path(File.join('../..', path), __FILE__) }
+
+OUTPUT_FILE   = expand_path.call(ENV['OUTPUT_FILE']   || './tmp/report.html')
+DATA_FILE     = expand_path.call(ENV['DATA_FILE']     || './tmp/issues.json')
+TEMPLATE_FILE = expand_path.call(ENV['TEMPLATE_FILE'] || './template.html')
 
 undefined_vars = REQUIRED_ENV_VARS.reject { |v| ENV.key? v }
 unless undefined_vars.empty?
@@ -120,12 +120,7 @@ browser = JiraBrowser.new(
   project_key: ENV['JIRA_PROJECT_KEY']
 )
 
-# puts JSON.pretty_generate browser.data
-
 issues = browser.data
 
-File.open(OUTPUT_FILE, 'w') do |f|
-  LOGGER.info("Template: #{TEMPLATE_FULL_PATH}")
-  LOGGER.info("Writing to '#{OUTPUT_FILE}'")
-  f.write(Mustache.render(File.read(TEMPLATE_FULL_PATH), issues: issues))
-end
+LOGGER.info("Writing to '#{DATA_FILE}'")
+File.write(OUTPUT_FILE, JSON.pretty_generate(browser.data))

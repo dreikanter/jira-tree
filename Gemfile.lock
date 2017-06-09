@@ -16,7 +16,6 @@ GEM
       oauth (~> 0.5, >= 0.5.0)
     method_source (0.8.2)
     minitest (5.10.2)
-    mustache (1.0.5)
     oauth (0.5.3)
     pry (0.10.4)
       coderay (~> 1.1.0)
@@ -34,7 +33,6 @@ DEPENDENCIES
   awesome_print (~> 1.7)
   dotenv (~> 2.1, >= 2.1.1)
   jira-ruby (~> 1.1)
-  mustache (~> 1.0)
   pry (~> 0.10.4)
 
 BUNDLED WITH
