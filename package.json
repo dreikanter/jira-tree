@@ -3,11 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "classnames": "^2.2.5",
     "react": "^15.5.4",
-    "react-dom": "^15.5.4"
+    "react-bootstrap": "^0.31.0",
+    "react-dom": "^15.5.4",
+    "react-fontawesome": "^1.6.1",
+    "whatwg-fetch": "^2.0.3"
   },
   "devDependencies": {
-    "react-scripts": "1.0.7"
+    "react-scripts": "1.0.7",
+    "stylelint": "^7.11.0",
+    "stylelint-config-standard": "^16.0.0"
   },
   "scripts": {
     "start": "react-scripts start",

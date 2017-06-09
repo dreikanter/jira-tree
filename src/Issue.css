@@ -1,0 +1,42 @@
+.Issue__body {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+.Issue__body:hover {
+  background-color: aliceblue;
+}
+
+.Issue__icon,
+.Issue__key,
+.Issue__type,
+.Issue__status,
+.Issue__summary,
+.Issue__subtasks-count {
+  padding: 10px;
+}
+
+.Issue__icon {
+  min-width: 2em;
+}
+
+.Issue__subtasks {
+  padding-left: 50px;
+}
+
+.Issue--done,
+.Issue--done a,
+.Issue--done a:visited {
+  color: #ccc;
+  text-decoration: line-through;
+}
+
+.Issue--epic > .Issue__body {
+  font-size: 24px;
+}
+
+.Issue__subtasks-count {
+  color: #ccc;
+}
